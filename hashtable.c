@@ -12,7 +12,7 @@
 
 struct hash_entry_parent {
 	struct hlist_node      link;
-	
+
 	struct inode           *inode;
 	struct file_operations *old_fops;
 
@@ -21,7 +21,7 @@ struct hash_entry_parent {
 
 struct hash_entry_file {
 	struct hlist_node        link;
-	
+
 	struct inode             *inode;
 	struct inode_operations  *old_iops;
 	struct file_operations   *old_fops;
@@ -74,7 +74,7 @@ int humble_hash_contains(u64 ino)
 {
 	int res;
 	down_read(&g_hash_lock);
-	res = (humble_get_file((u64)ino) != NULL);
+	res = (humble_get_file(ino) != NULL);
 	up_read(&g_hash_lock);
 	return res;
 }
@@ -85,6 +85,7 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 	struct hlist_head *bucket = NULL;
 	struct hash_entry_parent *pentry = NULL;
 	struct hash_entry_file *fentry = NULL;
+	int release_p = 0;
 
 	down_write(&g_hash_lock);
 	if (humble_get_file(f_inode->i_ino)) {
@@ -95,7 +96,7 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 	pentry = humble_get_parent(p_inode->i_ino);
 	if (pentry) {
 		pentry->hidden_cnt += 1;
-		iput(p_inode);
+		release_p = 1;
 	} else {
 		pentry = kmalloc(sizeof(*pentry), GFP_KERNEL);
 		if (!pentry) {
@@ -127,6 +128,9 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 	bucket = get_bucket(g_humble_file_hash, f_inode->i_ino);
 	hlist_add_head(&fentry->link, bucket);
 
+	if (release_p) {
+		iput(p_inode);
+	}
 	goto out;
 nomem:
 	kfree(fentry);

