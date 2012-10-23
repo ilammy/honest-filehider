@@ -156,6 +156,8 @@ int humble_hide_file(const char *path, u64 *ino)
 {
 	int err;
 	struct path dest;
+	struct inode *fnode;
+	struct inode *pnode;
 
 	err = kern_path(path, 0, &dest);
 	if (err) {
@@ -165,24 +167,37 @@ int humble_hide_file(const char *path, u64 *ino)
 
 	dget(dest.dentry);
 	dget(dest.dentry->d_parent);
-	ihold(dest.dentry->d_inode);
-	ihold(dest.dentry->d_parent->d_inode);
+	fnode = dest.dentry->d_inode;
+	pnode = dest.dentry->d_parent->d_inode;
+	ihold(fnode);
+	ihold(pnode);
 
-	err = humble_hash_add(dest.dentry->d_inode,
-	                      dest.dentry->d_parent->d_inode);
+	if ((fnode->i_sb->s_root->d_inode == fnode) ||
+	    (fnode->i_sb->s_root->d_inode == pnode))
+	{
+		printk(KERN_NOTICE
+			"Humble: hiding of mount points or their "
+			"direct descendants is prohibited\n");
+		err = -EPERM;
+		goto free_nodes;
+	}
+
+	err = humble_hash_add(fnode, pnode);
 	if (err) {
 		printk(KERN_NOTICE "Humble: could not add file to hash\n");
-		iput(dest.dentry->d_inode);
-		iput(dest.dentry->d_parent->d_inode);
-		goto out;
+		goto free_nodes;
 	}
-	dest.dentry->d_inode->i_op = &notfound_iops;
-	dest.dentry->d_inode->i_fop = &notfound_fops;
-	dest.dentry->d_parent->d_inode->i_fop = &filtering_fops;
+	fnode->i_op = &notfound_iops;
+	fnode->i_fop = &notfound_fops;
+	pnode->i_fop = &filtering_fops;
 
 	if (ino != NULL) {
-		*ino = dest.dentry->d_inode->i_ino;
+		*ino = fnode->i_ino;
 	}
+	goto out;
+free_nodes:
+	iput(pnode);
+	iput(fnode);
 out:
 	dput(dest.dentry->d_parent);
 	dput(dest.dentry);
