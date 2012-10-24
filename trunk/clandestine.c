@@ -162,7 +162,7 @@ int humble_hide_file(const char *path, u64 *ino)
 	err = kern_path(path, 0, &dest);
 	if (err) {
 		printk(KERN_NOTICE "Humble: could not find file %s\n", path);
-		goto out;
+		goto failed_lookup;
 	}
 
 	dget(dest.dentry);
@@ -179,13 +179,13 @@ int humble_hide_file(const char *path, u64 *ino)
 			"Humble: hiding of mount points or their "
 			"direct descendants is prohibited\n");
 		err = -EPERM;
-		goto free_nodes;
+		goto out;
 	}
 
 	err = humble_hash_add(fnode, pnode);
 	if (err) {
 		printk(KERN_NOTICE "Humble: could not add file to hash\n");
-		goto free_nodes;
+		goto out;
 	}
 	fnode->i_op = &notfound_iops;
 	fnode->i_fop = &notfound_fops;
@@ -194,13 +194,13 @@ int humble_hide_file(const char *path, u64 *ino)
 	if (ino != NULL) {
 		*ino = fnode->i_ino;
 	}
-	goto out;
-free_nodes:
+out:
 	iput(pnode);
 	iput(fnode);
-out:
 	dput(dest.dentry->d_parent);
 	dput(dest.dentry);
+	path_put(&dest);
+failed_lookup:
 	return err;
 }
 
