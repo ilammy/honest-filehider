@@ -20,7 +20,8 @@ static int __init humble_init(void)
 	for (i = 0; i < FILE_COUNT; ++i) {
 		err = humble_hide_file(g_victim[i], &g_inode[i]);
 		if (err) {
-			printk(KERN_ALERT "Humble: could not hide file\n");
+			printk(KERN_ALERT "Humble: could not hide file %s\n",
+				g_victim[i]);
 			goto out;
 		}
 	}
@@ -31,13 +32,10 @@ out:
 static void __exit humble_exit(void)
 {
 	int err;
-	int i;
 
-	for (i = FILE_COUNT - 1; i >= 0; --i) {
-		err = humble_unhide_file(g_inode[i]);
-		if (err) {
-			printk(KERN_ALERT "Humble: could not unhide file\n");
-		}
+	err = humble_hash_clear();
+	if (err) {
+		printk(KERN_ALERT "Humble: could not unhide files\n");
 	}
 	printk(KERN_INFO "Humble: unloaded");
 }

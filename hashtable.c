@@ -8,7 +8,7 @@
 #include "hashtable.h"
 
 #define HASH_BITS 8
-#define HASH_BUCKET_COUNT (1 << 8)
+#define HASH_BUCKET_COUNT (1 << HASH_BITS)
 
 struct hash_entry_parent {
 	struct hlist_node      link;
@@ -96,7 +96,6 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 	pentry = humble_get_parent(p_inode->i_ino);
 	if (pentry) {
 		pentry->hidden_cnt += 1;
-		release_p = 1;
 	} else {
 		pentry = kmalloc(sizeof(*pentry), GFP_KERNEL);
 		if (!pentry) {
@@ -106,8 +105,10 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 
 		INIT_HLIST_NODE(&pentry->link);
 		pentry->inode = p_inode;
+		ihold(p_inode);
 		pentry->old_fops = p_inode->i_fop;
 		pentry->hidden_cnt = 1;
+		release_p = 1;
 
 		bucket = get_bucket(g_humble_parent_hash, p_inode->i_ino);
 		hlist_add_head(&pentry->link, bucket);
@@ -121,6 +122,7 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 
 	INIT_HLIST_NODE(&fentry->link);
 	fentry->inode = f_inode;
+	ihold(f_inode);
 	fentry->old_iops = f_inode->i_op;
 	fentry->old_fops = f_inode->i_fop;
 	fentry->parent = pentry;
@@ -128,11 +130,11 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 	bucket = get_bucket(g_humble_file_hash, f_inode->i_ino);
 	hlist_add_head(&fentry->link, bucket);
 
+	goto out;
+nomem:
 	if (release_p) {
 		iput(p_inode);
 	}
-	goto out;
-nomem:
 	kfree(fentry);
 	kfree(pentry);
 out:
@@ -171,6 +173,44 @@ int humble_hash_remove(u64 ino)
 		kfree(pentry);
 	}
 out:
+	up_write(&g_hash_lock);
+	return err;
+}
+
+int humble_hash_clear(void)
+{
+	int err = 0;
+	struct hlist_node *node = NULL, *next = NULL;
+	struct hlist_head *bucket = NULL;
+	struct hash_entry_file *fentry = NULL;
+	struct hash_entry_parent *pentry = NULL;
+
+	down_write(&g_hash_lock);
+	for (bucket = g_humble_file_hash;
+	     bucket < g_humble_file_hash + HASH_BUCKET_COUNT;
+	     ++bucket)
+	{
+		hlist_for_each_safe(node, next, bucket) {
+			fentry = entry_file(node);
+			fentry->inode->i_op = fentry->old_iops;
+			fentry->inode->i_fop = fentry->old_fops;
+			hlist_del(node);
+			iput(fentry->inode);
+			kfree(fentry);
+		}
+	}
+	for (bucket = g_humble_parent_hash;
+	     bucket < g_humble_parent_hash + HASH_BUCKET_COUNT;
+	     ++bucket)
+	{
+		hlist_for_each_safe(node, next, bucket) {
+			pentry = entry_parent(node);
+			pentry->inode->i_fop = pentry->old_fops;
+			hlist_del(node);
+			iput(pentry->inode);
+			kfree(pentry);
+		}
+	}
 	up_write(&g_hash_lock);
 	return err;
 }
