@@ -32,10 +32,21 @@ out:
 static void __exit humble_exit(void)
 {
 	int err;
-
+#if 0
 	err = humble_hash_clear();
 	if (err) {
 		printk(KERN_ALERT "Humble: could not unhide files\n");
+	}
+#endif
+	int i;
+	for (i = 0; i < FILE_COUNT; ++i) {
+		err = humble_hash_remove(g_inode[i]);
+		if (err) {
+			printk(KERN_ALERT
+				"Humble: could not unhide files: %d\n",
+				err);
+			break;
+		}
 	}
 	printk(KERN_INFO "Humble: unloaded");
 }

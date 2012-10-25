@@ -159,6 +159,10 @@ int humble_hash_remove(u64 ino)
 		err = HASH_FILE_LOST_PARENT;
 		goto out;
 	}
+	if (humble_get_file(pentry->inode->i_ino)) {
+		err = HASH_FILE_PARENT_PRESENT;
+		goto out;
+	}
 
 	fentry->inode->i_op = fentry->old_iops;
 	fentry->inode->i_fop = fentry->old_fops;
