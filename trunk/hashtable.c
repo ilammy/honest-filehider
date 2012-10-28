@@ -1,11 +1,4 @@
-#include <linux/fs.h>
-#include <linux/hash.h>
-#include <linux/list.h>
-#include <linux/rwsem.h>
-#include <linux/slab.h>
-#include <linux/types.h>
-
-#include "hashtable.h"
+#include "humble.h"
 
 #define HASH_BITS 8
 #define HASH_BUCKET_COUNT (1 << HASH_BITS)
@@ -79,6 +72,10 @@ int humble_hash_contains(u64 ino)
 	return res;
 }
 
+/*  Errors:
+ *    -EEXIST  the inode is already hidden
+ *    -ENOMEM  could not allocate enough memory
+ */
 int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 {
 	int err = 0;
@@ -89,7 +86,7 @@ int humble_hash_add(struct inode *f_inode, struct inode *p_inode)
 
 	down_write(&g_hash_lock);
 	if (humble_get_file(f_inode->i_ino)) {
-		err = HASH_FILE_ALREADY_PRESENT;
+		err = -EEXIST;
 		goto out;
 	}
 
@@ -142,6 +139,12 @@ out:
 	return err;
 }
 
+/*  Errors:
+ *    -ENOENT     no such file in hash
+ *    -EBADF      the file has lost its parent, cannot restore
+ *    -ENOTEMPTY  trying to remove the file when its parent
+ *                directory still exists in the hash
+ */
 int humble_hash_remove(u64 ino)
 {
 	int err = 0;
@@ -151,16 +154,17 @@ int humble_hash_remove(u64 ino)
 	down_write(&g_hash_lock);
 	fentry = humble_get_file(ino);
 	if (!fentry) {
-		err = HASH_FILE_NOT_PRESENT;
+		err = -ENOENT;
 		goto out;
 	}
 	pentry = fentry->parent;
 	if (!pentry) {
-		err = HASH_FILE_LOST_PARENT;
+		PRcritical("File #%lld has lost its parent\n", ino);
+		err = -EBADF;
 		goto out;
 	}
 	if (humble_get_file(pentry->inode->i_ino)) {
-		err = HASH_FILE_PARENT_PRESENT;
+		err = -ENOTEMPTY;
 		goto out;
 	}
 
