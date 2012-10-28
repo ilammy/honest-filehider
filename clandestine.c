@@ -1,13 +1,4 @@
-#include <linux/errno.h>
-#include <linux/fs.h>
-#include <linux/module.h>
-#include <linux/mutex.h>
-#include <linux/namei.h>
-#include <linux/path.h>
-#include <linux/rwsem.h>
-
 #include "humble.h"
-
 
 static filldir_t g_original_filldir;
 
@@ -128,7 +119,7 @@ int humble_hide_file(const char *path, u64 *ino)
 
 	err = kern_path(path, 0, &dest);
 	if (err) {
-		printk(KERN_NOTICE "Humble: could not find file %s\n", path);
+		PRnotice("Could not find file %s\n", path);
 		goto failed_lookup;
 	}
 
@@ -142,16 +133,13 @@ int humble_hide_file(const char *path, u64 *ino)
 	if ((fnode->i_sb->s_root->d_inode == fnode) ||
 	    (fnode->i_sb->s_root->d_inode == pnode))
 	{
-		printk(KERN_NOTICE
-			"Humble: hiding of mount points or their "
-			"direct descendants is prohibited\n");
 		err = -EPERM;
 		goto out;
 	}
 
 	err = humble_hash_add(fnode, pnode);
 	if (err) {
-		printk(KERN_NOTICE "Humble: could not add file to hash\n");
+		PRerror("Could not add file %s to hash\n", path);
 		goto out;
 	}
 	fnode->i_op = &notfound_iops;
@@ -173,5 +161,9 @@ failed_lookup:
 
 int humble_unhide_file(u64 ino)
 {
-	return humble_hash_remove(ino);;
+	int err = humble_hash_remove(ino);
+	if (err) {
+		PRerror("Could not remove file #%lld from hash\n", ino);
+	}
+	return err;
 }
