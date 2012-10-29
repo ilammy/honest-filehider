@@ -12,7 +12,7 @@
 #include <linux/namei.h>
 #include <linux/rwsem.h>
 #include <linux/slab.h>
-
+#include <asm-generic/uaccess.h>
 
 #define MODULE_NAME "Humble"
 
