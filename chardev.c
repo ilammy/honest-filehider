@@ -10,19 +10,138 @@ static struct cdev g_cdev;
 
 static int g_open_count = 0;
 
+#define OUTPUT_BUFFER_SIZE 40
+#define INPUT_BUFFER_SIZE 512
+
+static char obuffer[OUTPUT_BUFFER_SIZE];
+static char ibuffer[INPUT_BUFFER_SIZE];
+
+static inline int output_error(int code)
+{
+	return snprintf(obuffer, OUTPUT_BUFFER_SIZE, "E%d\n", code);
+}
 
 static ssize_t device_read(struct file *filp, char __user *buffer,
                            size_t size, loff_t *offset)
 {
-	PRdebug("Read");
-	return 0;
+	int bytes_read = 0;
+
+	PRdebug("Read @ %d: %s\n", size, obuffer);
+
+	if (obuffer[0] == '\0') {
+		return 0;
+	}
+	if (size >= OUTPUT_BUFFER_SIZE) {
+		int the_size = strlen(obuffer);
+		if (the_size < OUTPUT_BUFFER_SIZE) {
+			bytes_read = strlen(obuffer) + 1;
+			bytes_read -= copy_to_user(buffer, obuffer, bytes_read);
+		}
+	}
+	return bytes_read;
+}
+
+static void handle_hiding(void)
+{
+	PRdebug("Hide\n");
+
+	if (ibuffer[1] != ' ' || ibuffer[2] != '/') {
+		PRdebug("Invalid hiding format: %s\n", ibuffer);
+		output_error(-EINVAL);
+		return;
+	}
+
+	int err;
+	u64 ino;
+
+	err = humble_hide_file(ibuffer + 2, &ino);
+	if (!err) {
+		PRdebug("Hidden %s\n", ibuffer + 2);
+		snprintf(obuffer, OUTPUT_BUFFER_SIZE, "%lld\n", ino);
+	} else {
+		PRdebug("Failed hiding %s: %d\n", ibuffer + 2, err);
+		output_error(err);
+	}
+}
+
+static void handle_unhiding(void)
+{
+	PRdebug("Unhide\n");
+
+	u64 ino;
+
+	if (sscanf(ibuffer + 1, "%lld", &ino) != 1) {
+		PRdebug("Invalid unhiding format: %s\n", ibuffer);
+		output_error(-EINVAL);
+		return;
+	}
+
+	int err;
+
+	err = humble_unhide_file(ino);
+	if (!err) {
+		PRdebug("Unhidden #%lld\n", ino);
+		snprintf(obuffer, OUTPUT_BUFFER_SIZE, "%lld\n", ino);
+	} else {
+		PRdebug("Failed unhiding #%lld: %d\n", ino, err);
+		output_error(err);
+	}
+}
+
+static void handle_clearing(void)
+{
+	PRdebug("Clear all\n");
+
+	if (ibuffer[1] != '\0') {
+		PRdebug("Unvalid clearing format\n");
+		output_error(-EINVAL);
+		return;
+	}
+
+	int err;
+	err = humble_hash_clear();
+	if (!err) {
+		snprintf(obuffer, OUTPUT_BUFFER_SIZE, "Done\n");
+	} else {
+		PRdebug("Failed clearing: %d\n", err);
+		output_error(err);
+	}
 }
 
 static ssize_t device_write(struct file *filp, const char __user *buffer,
                             size_t size, loff_t *offset)
 {
-	PRdebug("Write");
-	return size;
+	int err;
+	ssize_t bytes_written = 0;
+
+	if (size >= INPUT_BUFFER_SIZE) return -ENOSPC;
+
+	bytes_written = strncpy_from_user(ibuffer, buffer, size);
+	if (bytes_written >= 0) {
+		ibuffer[bytes_written] = '\0';
+		if (bytes_written > 0 && ibuffer[bytes_written - 1] == '\n') {
+			ibuffer[bytes_written - 1] = '\0';
+		}
+	}
+
+	PRdebug("Write (%d): %s\n", size, ibuffer);
+
+	switch (ibuffer[0]) {
+	case 'H':
+		handle_hiding();
+		break;
+	case 'U':
+		handle_unhiding();
+		break;
+	case 'C':
+		handle_clearing();
+		break;
+	default:
+		PRdebug("Unknown: %s\n", ibuffer);
+		output_error(-EINVAL);
+		break;
+	}
+	return bytes_written;
 }
 
 /*
@@ -35,12 +154,10 @@ static ssize_t device_write(struct file *filp, const char __user *buffer,
 static int device_open(struct inode *node, struct file *filp)
 {
 	if (g_open_count > 0) {
-		PRdebug("Open busy");
 		return -EBUSY;
 	}
 	++g_open_count;
 	try_module_get(THIS_MODULE);
-	PRdebug("Opened");
 	return 0;
 }
 
@@ -48,7 +165,6 @@ static int device_release(struct inode *node, struct file *filp)
 {
 	--g_open_count;
 	module_put(THIS_MODULE);
-	PRdebug("Closed");
 	return 0;
 }
 
