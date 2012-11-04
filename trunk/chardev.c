@@ -15,34 +15,39 @@ static int g_open_count = 0;
 
 static char obuffer[OUTPUT_BUFFER_SIZE];
 static char ibuffer[INPUT_BUFFER_SIZE];
+static ssize_t obuffer_len;
+
+#define print_out(args...) \
+    (obuffer_len = snprintf(obuffer, OUTPUT_BUFFER_SIZE, args), \
+     obuffer_len = (obuffer_len >= 0 ? obuffer_len + 1 : 0) )
 
 static inline int output_error(int code)
 {
-	return snprintf(obuffer, OUTPUT_BUFFER_SIZE, "E%d\n", code);
+	return print_out("E%d\n", code);
 }
 
 static ssize_t device_read(struct file *filp, char __user *buffer,
                            size_t size, loff_t *offset)
 {
-	int bytes_read = 0;
+	ssize_t bytes_read = 0;
 
 	PRdebug("Read @ %d: %s\n", size, obuffer);
 
 	if (obuffer[0] == '\0') {
 		return 0;
 	}
-	if (size >= OUTPUT_BUFFER_SIZE) {
-		int the_size = strlen(obuffer);
-		if (the_size < OUTPUT_BUFFER_SIZE) {
-			bytes_read = strlen(obuffer) + 1;
-			bytes_read -= copy_to_user(buffer, obuffer, bytes_read);
-		}
+	if (size >= obuffer_len) {
+		bytes_read = obuffer_len;
+		bytes_read -= copy_to_user(buffer, obuffer, obuffer_len);
 	}
 	return bytes_read;
 }
 
 static void handle_hiding(void)
 {
+	int err;
+	u64 ino;
+
 	PRdebug("Hide\n");
 
 	if (ibuffer[1] != ' ' || ibuffer[2] != '/') {
@@ -50,14 +55,10 @@ static void handle_hiding(void)
 		output_error(-EINVAL);
 		return;
 	}
-
-	int err;
-	u64 ino;
-
 	err = humble_hide_file(ibuffer + 2, &ino);
 	if (!err) {
 		PRdebug("Hidden %s\n", ibuffer + 2);
-		snprintf(obuffer, OUTPUT_BUFFER_SIZE, "%lld\n", ino);
+		print_out("%lld\n", ino);
 	} else {
 		PRdebug("Failed hiding %s: %d\n", ibuffer + 2, err);
 		output_error(err);
@@ -66,22 +67,20 @@ static void handle_hiding(void)
 
 static void handle_unhiding(void)
 {
-	PRdebug("Unhide\n");
-
+	int err;
 	u64 ino;
+
+	PRdebug("Unhide\n");
 
 	if (sscanf(ibuffer + 1, "%lld", &ino) != 1) {
 		PRdebug("Invalid unhiding format: %s\n", ibuffer);
 		output_error(-EINVAL);
 		return;
 	}
-
-	int err;
-
 	err = humble_unhide_file(ino);
 	if (!err) {
 		PRdebug("Unhidden #%lld\n", ino);
-		snprintf(obuffer, OUTPUT_BUFFER_SIZE, "%lld\n", ino);
+		print_out("%lld\n", ino);
 	} else {
 		PRdebug("Failed unhiding #%lld: %d\n", ino, err);
 		output_error(err);
@@ -90,6 +89,8 @@ static void handle_unhiding(void)
 
 static void handle_clearing(void)
 {
+	int err;
+
 	PRdebug("Clear all\n");
 
 	if (ibuffer[1] != '\0') {
@@ -97,11 +98,9 @@ static void handle_clearing(void)
 		output_error(-EINVAL);
 		return;
 	}
-
-	int err;
 	err = humble_hash_clear();
 	if (!err) {
-		snprintf(obuffer, OUTPUT_BUFFER_SIZE, "Done\n");
+		print_out("0\n");
 	} else {
 		PRdebug("Failed clearing: %d\n", err);
 		output_error(err);
