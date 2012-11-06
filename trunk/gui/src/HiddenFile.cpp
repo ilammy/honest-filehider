@@ -1,8 +1,11 @@
 #include "HiddenFile.h"
 
-HiddenFile::HiddenFile(const QString &path, quint64 inode, HiddenFile *parent)
-  : fullPath(path),
-    ino(inode),
+HiddenFile::HiddenFile(const QString &name, bool isDirectory,
+                       HiddenFile *parent, quint64 ino)
+  : name(name),
+    ino(ino),
+    hidden(isDirectory? false : true),
+    directory(isDirectory),
     theParent(parent)
 {}
 
@@ -36,4 +39,14 @@ int HiddenFile::row() const
         return theParent->children.indexOf(const_cast<HiddenFile*>(this));
     }
     return 0;
+}
+
+HiddenFile* HiddenFile::childByName(const QString &name, bool shouldBeDir)
+{
+    foreach (HiddenFile *theOne, children) {
+        if (theOne->isDir() == shouldBeDir && theOne->getName() == name) {
+            return theOne;
+        }
+    }
+    return NULL;
 }

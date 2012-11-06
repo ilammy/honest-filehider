@@ -6,11 +6,19 @@
 
 class HiddenFile {
 public:
-    HiddenFile(const QString &path, quint64 inode, HiddenFile *parent = 0);
+    static const quint64 INVALID_INO = ~((quint64)0);
+
+public:
+    HiddenFile(const QString &name, bool isDirectory,
+               HiddenFile *parent = 0, quint64 ino = INVALID_INO);
     ~HiddenFile();
 
-    const QString& getPath() const { return fullPath; }
+    const QString& getName() const { return name; }
     const quint64  getIno()  const { return ino; }
+
+    void hide(bool really) { hidden = really; }
+    bool isHidden() const { return hidden; }
+    bool isDir() const { return directory; }
 
     void append(HiddenFile *file);
     void removeAt(int idx);
@@ -21,9 +29,14 @@ public:
     int childrenCount() const { return children.count(); }
     int row() const;
 
+    HiddenFile* childByName(const QString &name, bool shouldBeDir = false);
+
 private:
-    QString fullPath;
+    QString name;
     quint64 ino;
+
+    bool hidden;
+    bool directory;
 
     QList<HiddenFile*> children;
     HiddenFile *theParent;
