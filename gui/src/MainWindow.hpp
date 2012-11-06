@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QFileSystemModel>
 
-#include "HiddenFilesModel.h"
+#include "HiddenModel.h"
 
 namespace Ui {
 class MainWindow;
@@ -28,7 +28,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QFileSystemModel *fs_model;
-    HiddenFilesModel *hd_model;
+    HiddenModel *hd_model;
 
     void setupUi();
 };

@@ -21,13 +21,14 @@ void MainWindow::setupUi()
     ui->fs_tree->setColumnHidden(3, true);
     ui->fs_tree->sortByColumn(0, Qt::AscendingOrder);
 
-    hd_model = new HiddenFilesModel(this);
+    hd_model = new HiddenModel(this);
     ui->hidden_view->setModel(hd_model);
 
     connect(ui->fs_tree->selectionModel(),
             SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(updatePathViewer()));
 }
+
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -35,11 +36,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::hideVictimFile()
 {
-    // incorrect
-    foreach (const QModelIndex &i,
-             ui->fs_tree->selectionModel()->selectedRows())
-    {
-        switch (hd_model->hideFile(fs_model->filePath(i))) {
+    QModelIndexList sel = ui->fs_tree->selectionModel()->selectedRows();
+    Q_ASSERT(sel.count() <= 1);
+    if (sel.count() == 1) {
+        switch (hd_model->hideFile(fs_model->filePath(sel.at(0)))) {
         default:
             break;
         }
@@ -48,11 +48,10 @@ void MainWindow::hideVictimFile()
 
 void MainWindow::unhideSolacedFile()
 {
-    // incorrect
-    foreach (const QModelIndex &i,
-             ui->hidden_view->selectionModel()->selectedRows())
-    {
-        switch (hd_model->unhideFile(i)) {
+    QModelIndexList sel = ui->hidden_view->selectionModel()->selectedRows();
+    Q_ASSERT(sel.count() <= 1);
+    if (sel.count() == 1) {
+        switch (hd_model->unhideFile(sel.at(0))) {
         default:
             break;
         }
@@ -71,19 +70,12 @@ void MainWindow::selectVictimFile()
 void MainWindow::updatePathViewer()
 {
     QModelIndexList selection = ui->fs_tree->selectionModel()->selectedRows();
-    switch (selection.size()) {
-    case 0:
-        ui->path_display->setText("");
-        break;
-
-    case 1:
-    {   QString path = fs_model->filePath(selection.at(0));
+    if (selection.size() == 1) {
+        QString path = fs_model->filePath(selection.at(0));
         ui->path_display->setText(path);
-        break;
     }
-    default:
-        ui->path_display->setText(tr("Multiple files selected"));
-        break;
+    else {
+        ui->path_display->setText("");
     }
 }
 
