@@ -39,7 +39,8 @@ void MainWindow::hideVictimFile()
     QModelIndexList sel = ui->fs_tree->selectionModel()->selectedRows();
     Q_ASSERT(sel.count() <= 1);
     if (sel.count() == 1) {
-        switch (hd_model->hideFile(fs_model->filePath(sel.at(0)))) {
+        bool recursive = ui->recursive_checkbox->isChecked();
+        switch (hd_model->hideFile(fs_model->filePath(sel.at(0)), recursive)) {
         default:
             break;
         }

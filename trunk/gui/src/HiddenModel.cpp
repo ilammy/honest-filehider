@@ -13,6 +13,10 @@ HiddenModel::~HiddenModel()
     delete root;
 }
 
+//
+// Qt MVC boilerplate
+//
+
 QModelIndex HiddenModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid()) {
@@ -74,15 +78,20 @@ HiddenFile* HiddenModel::the(const QModelIndex &index) const
     }
 }
 
+//
+// Hidden file tree management
+//
+
 HiddenModel::ErrorCode
-HiddenModel::hideFile(const QString &path)
+HiddenModel::hideFile(const QString &path, bool recursive)
 {
     QFileInfo info(path);
+    Q_ASSERT(info.isAbsolute());
     if (info.isFile()) {
-        return tryHideFile(info);
+        return hideFile(info);
     }
     else {
-        return tryHideDirectory(info);
+        return hideDir(info, recursive);
     }
 }
 
@@ -93,56 +102,114 @@ HiddenModel::unhideFile(const QModelIndex &index)
 }
 
 HiddenModel::ErrorCode
-HiddenModel::tryHideFile(QFileInfo &info)
+HiddenModel::hideFile(QFileInfo &file)
 {
-    QStringList dirpath = getDirPath(info);
-    if (alreadyPresent(info, dirpath)) {
+    QStringList parentPath = tokenizeDirPath(file.dir());
+    if (fileAlreadyHidden(file, parentPath)) {
         return ALREADY_HIDDEN;
     }
+    QModelIndex parent = ensureDirPath(parentPath);
+    return doHideFile(parent, file);
+}
+
+HiddenModel::ErrorCode
+HiddenModel::doHideFile(const QModelIndex &parent, const QFileInfo &file)
+{
     quint64 ino;
-    // hide(info.absoluteFilePath(), &ino)
+    // hide(file.absoluteFilePath(), &ino)
     // check for errors
-    QModelIndex parent = ensureParentPath(dirpath);
     int index = the(parent)->childrenCount();
     beginInsertRows(parent, index, index);
-    HiddenFile *child = new HiddenFile(info.fileName(), false, the(parent), ino);
+    HiddenFile *child = new HiddenFile(file.fileName(), false, the(parent), ino);
     the(parent)->append(child);
     endInsertRows();
     return OKAY;
 }
 
 HiddenModel::ErrorCode
-HiddenModel::tryHideDirectory(QFileInfo &info)
+HiddenModel::hideDir(QFileInfo &dir, bool recursive)
 {
+    const QDir the_dir(dir.absoluteFilePath());
+    QStringList dirpath = tokenizeDirPath(the_dir);
+    if (dirAlreadyHidden(dirpath)) {
+        return ALREADY_HIDDEN;
+    }
+    ErrorCode err = OKAY;
+    QModelIndex dirIndex = ensureDirPath(dirpath);
+    err = hideChildFiles(dirIndex, the_dir);
+    if (err != OKAY) {
+        return err;
+    }
+    if (recursive) {
+        err = hideChildDirs(dirIndex, the_dir);
+        if (err != OKAY) {
+            return err;
+        }
+        // hide the dir
+        // check for errors
+        the(dirIndex)->hide(true);
+    }
     return OKAY;
 }
 
-bool HiddenModel::alreadyPresent(const QFileInfo &info,
-                                 const QStringList &dirpath) const
+bool HiddenModel::fileAlreadyHidden(const QFileInfo &info,
+                                    const QStringList &dirpath) const
 {
-    HiddenFile *parent = tryWalkToEnd(dirpath);
+    HiddenFile *parent = tryDescent(dirpath);
     if (!parent) {
         return false;
     }
-    return (parent->childByName(info.fileName()) != NULL);
+    HiddenFile *child = parent->childFileByName(info.fileName());
+    return (child != NULL && child->isHidden());
 }
 
-QModelIndex HiddenModel::ensureParentPath(const QStringList &dirpath)
+bool HiddenModel::dirAlreadyHidden(const QStringList &dirpath) const
+{
+    HiddenFile *dir = tryDescent(dirpath);
+    return (dir != NULL && dir->isHidden());
+}
+
+HiddenFile* HiddenModel::tryDescent(const QStringList &dirpath) const
+{
+    HiddenFile *currentFile = root;
+    for (QStringList::ConstIterator currentDir = dirpath.constBegin(),
+                                    lastDir = dirpath.constEnd();
+         currentDir != lastDir;
+         ++currentDir)
+    {
+        currentFile = currentFile->childDirByName(*currentDir);
+        if (currentFile == NULL) {
+            return NULL;
+        }
+    }
+    return currentFile;
+}
+
+QStringList HiddenModel::tokenizeDirPath(QDir dir)
+{
+    QStringList result;
+    while (!dir.isRoot()) {
+        result.push_front(dir.dirName());
+        dir.cdUp();
+    }
+    result.push_front(dir.absolutePath());
+    return result;
+}
+
+QModelIndex HiddenModel::ensureDirPath(const QStringList &dirpath)
 {
     QModelIndex currentIndex = QModelIndex();
     HiddenFile *currentFile = root;
     QStringList::ConstIterator currentDir = dirpath.constBegin();
     QStringList::ConstIterator lastDir = dirpath.constEnd();
     while (currentDir != lastDir) {
-        HiddenFile *child = currentFile->childByName(*currentDir, true);
-        if (child != NULL) {
-            currentIndex = index(child->row(), 0, currentIndex);
-            currentFile = child;
-            ++currentDir;
-        }
-        else {
+        HiddenFile *child = currentFile->childDirByName(*currentDir);
+        if (child == NULL) {
             break;
         }
+        currentIndex = index(child->row(), 0, currentIndex);
+        currentFile = child;
+        ++currentDir;
     }
     while (currentDir != lastDir) {
         HiddenFile *child = new HiddenFile(*currentDir, true, currentFile);
@@ -158,30 +225,36 @@ QModelIndex HiddenModel::ensureParentPath(const QStringList &dirpath)
     return currentIndex;
 }
 
-QStringList HiddenModel::getDirPath(const QFileInfo &info)
+HiddenModel::ErrorCode
+HiddenModel::hideChildFiles(const QModelIndex &parentIndex, const QDir &dir)
 {
-    QDir dir(info.dir());
-    QStringList result;
-    while (!dir.isRoot()) {
-        result.push_front(dir.dirName());
-        dir.cdUp();
-    }
-    result.push_front(dir.absolutePath());
-    return result;
-}
-
-HiddenFile* HiddenModel::tryWalkToEnd(const QStringList &dirpath) const
-{
-    HiddenFile *currentFile = root;
-    for (QStringList::ConstIterator currentDir = dirpath.constBegin(),
-                                    lastDir = dirpath.constEnd();
-         currentDir != lastDir;
-         ++currentDir)
-    {
-        currentFile = currentFile->childByName(*currentDir, true);
-        if (currentFile == NULL) {
-            break;
+    QFileInfoList children = dir.entryInfoList();
+    foreach (const QFileInfo &entry, children) {
+        if (!entry.isFile()) {
+            continue;
+        }
+        ErrorCode err = doHideFile(parentIndex, entry);
+        if (err != OKAY) {
+            return err;
         }
     }
-    return currentFile;
+    return OKAY;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::hideChildDirs(const QModelIndex &parentIndex, const QDir &dir)
+{
+    QFileInfoList children = dir.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot);
+    foreach (const QFileInfo &entry, children) {
+        if (entry.isFile()) {
+            continue;
+        }
+        // inefficient
+        QFileInfo theDir(entry);
+        ErrorCode err = hideDir(theDir, true);
+        if (err != OKAY) {
+            return err;
+        }
+    }
+    return OKAY;
 }

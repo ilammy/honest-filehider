@@ -41,10 +41,20 @@ int HiddenFile::row() const
     return 0;
 }
 
-HiddenFile* HiddenFile::childByName(const QString &name, bool shouldBeDir)
+HiddenFile* HiddenFile::childFileByName(const QString &name) const
 {
     foreach (HiddenFile *theOne, children) {
-        if (theOne->isDir() == shouldBeDir && theOne->getName() == name) {
+        if (!theOne->isDir() && theOne->getName() == name) {
+            return theOne;
+        }
+    }
+    return NULL;
+}
+
+HiddenFile* HiddenFile::childDirByName(const QString &name) const
+{
+    foreach (HiddenFile *theOne, children) {
+        if (theOne->isDir() && theOne->getName() == name) {
             return theOne;
         }
     }

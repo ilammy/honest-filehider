@@ -3,6 +3,7 @@
 
 #include <QAbstractItemModel>
 #include <QFileInfo>
+#include <QDir>
 #include <QStringList>
 
 #include "HiddenFile.h"
@@ -22,7 +23,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
 
-    ErrorCode hideFile(const QString &path);
+    ErrorCode hideFile(const QString &path, bool recursive);
     ErrorCode unhideFile(const QModelIndex &index);
 
 private:
@@ -30,14 +31,21 @@ private:
 
     HiddenFile* the(const QModelIndex &index) const;
 
-    ErrorCode tryHideFile(QFileInfo &info);
-    ErrorCode tryHideDirectory(QFileInfo &info);
+    ErrorCode hideFile(QFileInfo &info);
+    ErrorCode hideDir(QFileInfo &info, bool recursive);
 
-    bool alreadyPresent(const QFileInfo &info, const QStringList &dirs) const;
-    QModelIndex ensureParentPath(const QStringList &dirpath);
+    ErrorCode doHideFile(const QModelIndex &parent, const QFileInfo &file);
 
-    static QStringList getDirPath(const QFileInfo &info);
-    HiddenFile* tryWalkToEnd(const QStringList &dirpath) const;
+    bool fileAlreadyHidden(const QFileInfo &file, const QStringList &dir) const;
+    bool dirAlreadyHidden(const QStringList &dirpath) const;
+
+    QModelIndex ensureDirPath(const QStringList &dirpath);
+
+    static QStringList tokenizeDirPath(QDir dir);
+    HiddenFile* tryDescent(const QStringList &dirpath) const;
+
+    ErrorCode hideChildFiles(const QModelIndex &parentIndex, const QDir &dir);
+    ErrorCode hideChildDirs(const QModelIndex &parentIndex, const QDir &dir);
 };
 
 #endif // HIDDENMODEL_H

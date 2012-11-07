@@ -29,7 +29,8 @@ public:
     int childrenCount() const { return children.count(); }
     int row() const;
 
-    HiddenFile* childByName(const QString &name, bool shouldBeDir = false);
+    HiddenFile* childFileByName(const QString &name) const;
+    HiddenFile* childDirByName(const QString &name) const;
 
 private:
     QString name;
