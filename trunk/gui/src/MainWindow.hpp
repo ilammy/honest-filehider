@@ -5,6 +5,7 @@
 #include <QFileSystemModel>
 
 #include "HiddenModel.h"
+#include "DriverGate.hpp"
 
 namespace Ui {
 class MainWindow;
