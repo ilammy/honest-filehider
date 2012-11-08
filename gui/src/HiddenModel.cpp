@@ -2,8 +2,9 @@
 
 #include <QDir>
 
-HiddenModel::HiddenModel(QObject *parent)
-  : QAbstractItemModel(parent)
+HiddenModel::HiddenModel(DriverGate *gate, QObject *parent)
+  : QAbstractItemModel(parent),
+    gate(gate)
 {
     root = new HiddenFile("", false);
 }
@@ -11,6 +12,7 @@ HiddenModel::HiddenModel(QObject *parent)
 HiddenModel::~HiddenModel()
 {
     delete root;
+    delete gate;
 }
 
 //
@@ -98,7 +100,12 @@ HiddenModel::hideFile(const QString &path, bool recursive)
 HiddenModel::ErrorCode
 HiddenModel::unhideFile(const QModelIndex &index)
 {
-    return OKAY;
+    if (the(index)->isDir()) {
+        return unhideDir(index);
+    }
+    else {
+        return unhideFile_(index);
+    }
 }
 
 HiddenModel::ErrorCode
@@ -109,15 +116,25 @@ HiddenModel::hideFile(QFileInfo &file)
         return ALREADY_HIDDEN;
     }
     QModelIndex parent = ensureDirPath(parentPath);
-    return doHideFile(parent, file);
+    ErrorCode err = translate(gate->tryOpen());
+    if (err != OKAY) {
+        return err;
+    }
+    err = doHideFile(parent, file);
+    gate->close();
+    return err;
 }
 
 HiddenModel::ErrorCode
 HiddenModel::doHideFile(const QModelIndex &parent, const QFileInfo &file)
 {
     quint64 ino;
-    // hide(file.absoluteFilePath(), &ino)
-    // check for errors
+    Q_ASSERT(gate->isOpen());
+    const char *path = file.absoluteFilePath().toStdString().c_str();
+    ErrorCode err = translate(gate->hide(path, &ino));
+    if (err != OKAY) {
+        return err;
+    }
     int index = the(parent)->childrenCount();
     beginInsertRows(parent, index, index);
     HiddenFile *child = new HiddenFile(file.fileName(), false, the(parent), ino);
@@ -229,15 +246,20 @@ HiddenModel::ErrorCode
 HiddenModel::hideChildFiles(const QModelIndex &parentIndex, const QDir &dir)
 {
     QFileInfoList children = dir.entryInfoList();
+    ErrorCode err = translate(gate->tryOpen());
+    if (err != OKAY) {
+        return err;
+    }
     foreach (const QFileInfo &entry, children) {
         if (!entry.isFile()) {
             continue;
         }
-        ErrorCode err = doHideFile(parentIndex, entry);
+        err = doHideFile(parentIndex, entry);
         if (err != OKAY) {
             return err;
         }
     }
+    gate->close();
     return OKAY;
 }
 
@@ -257,4 +279,67 @@ HiddenModel::hideChildDirs(const QModelIndex &parentIndex, const QDir &dir)
         }
     }
     return OKAY;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::unhideDir(const QModelIndex &index)
+{
+    return OKAY;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::unhideFile_(const QModelIndex &index)
+{
+    HiddenFile *file = the(index);
+    if (file->parent()->isHidden()) {
+        return HIDDEN_PARENT;
+    }
+    ErrorCode err = translate(gate->tryOpen());
+    if (err != OKAY) {
+        return err;
+    }
+    err = doUnhideFile(index.parent(), file);
+    gate->close();
+    return err;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::doUnhideFile(const QModelIndex &parent, HiddenFile *file)
+{
+    Q_ASSERT(gate->isOpen());
+    ErrorCode err = translate(gate->unhide(file->getIno()));
+    if (err != OKAY) {
+        return err;
+    }
+    int index = file->row();
+    beginRemoveRows(parent, index, index);
+    file->parent()->removeAt(index);
+    endRemoveRows();
+    return OKAY;
+}
+
+HiddenModel::ErrorCode HiddenModel::translate(DriverGate::OpenStatus status)
+{
+    switch (status) {
+    case DriverGate::OPEN:      return OKAY;
+    case DriverGate::NOT_FOUND: return DEVICE_NOT_FOUND;
+    case DriverGate::BUSY:      return DEVICE_BUSY;
+    default:
+        return OPEN_FILE_PROBLEM;
+    }
+}
+
+HiddenModel::ErrorCode HiddenModel::translate(DriverGate::Status status)
+{
+    Q_ASSERT(status != DriverGate::INVALID_FORMAT
+          && status != DriverGate::NOT_OPEN
+          && status != DriverGate::UNKNOWN_FILE);
+    switch (status) {
+    case DriverGate::OKAY:           return OKAY;
+    case DriverGate::MOUNT_POINT:    return MOUNT_POINT;
+    case DriverGate::ALREADY_HIDDEN: return ALREADY_HIDDEN;
+    case DriverGate::HIDDEN_PARENT:  return HIDDEN_PARENT;
+    default:
+        return HIDING_PROBLEM;
+    }
 }

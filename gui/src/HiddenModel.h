@@ -6,14 +6,23 @@
 #include <QDir>
 #include <QStringList>
 
+#include "DriverGate.hpp"
 #include "HiddenFile.h"
 
 class HiddenModel : public QAbstractItemModel {
 public:
-    enum ErrorCode { OKAY, INVALID_INDEX, ALREADY_HIDDEN };
-
+    enum ErrorCode { OKAY,
+                     INVALID_INDEX,
+                     ALREADY_HIDDEN,
+                     DEVICE_NOT_FOUND,
+                     DEVICE_BUSY,
+                     OPEN_FILE_PROBLEM,
+                     MOUNT_POINT,
+                     HIDDEN_PARENT,
+                     HIDING_PROBLEM
+                   };
 public:
-    HiddenModel(QObject *parent = 0);
+    HiddenModel(DriverGate *gate, QObject *parent = 0);
     ~HiddenModel();
 
     QModelIndex parent(const QModelIndex &index) const;
@@ -27,7 +36,11 @@ public:
     ErrorCode unhideFile(const QModelIndex &index);
 
 private:
+    DriverGate *gate;
     HiddenFile *root;
+
+    static ErrorCode translate(DriverGate::OpenStatus);
+    static ErrorCode translate(DriverGate::Status);
 
     HiddenFile* the(const QModelIndex &index) const;
 
@@ -46,6 +59,11 @@ private:
 
     ErrorCode hideChildFiles(const QModelIndex &parentIndex, const QDir &dir);
     ErrorCode hideChildDirs(const QModelIndex &parentIndex, const QDir &dir);
+
+    ErrorCode unhideFile_(const QModelIndex &index);
+    ErrorCode unhideDir(const QModelIndex &index);
+
+    ErrorCode doUnhideFile(const QModelIndex &parent, HiddenFile *file);
 };
 
 #endif // HIDDENMODEL_H

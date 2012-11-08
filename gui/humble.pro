@@ -13,12 +13,14 @@ SOURCES += \
     src/main.cpp \
     src/MainWindow.cpp \
     src/HiddenFile.cpp \
-    src/HiddenModel.cpp
+    src/HiddenModel.cpp \
+    src/DriverGate.cpp
 
 HEADERS += \
     src/MainWindow.hpp \
     src/HiddenFile.h \
-    src/HiddenModel.h
+    src/HiddenModel.h \
+    src/DriverGate.hpp
 
 FORMS   += \
     ui/MainWindow.ui

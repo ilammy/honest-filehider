@@ -21,7 +21,8 @@ void MainWindow::setupUi()
     ui->fs_tree->setColumnHidden(3, true);
     ui->fs_tree->sortByColumn(0, Qt::AscendingOrder);
 
-    hd_model = new HiddenModel(this);
+    DriverGate *gate = new DriverGate("/dev/hcontrol");
+    hd_model = new HiddenModel(gate, this);
     ui->hidden_view->setModel(hd_model);
 
     connect(ui->fs_tree->selectionModel(),
@@ -41,9 +42,11 @@ void MainWindow::hideVictimFile()
     if (sel.count() == 1) {
         bool recursive = ui->recursive_checkbox->isChecked();
         switch (hd_model->hideFile(fs_model->filePath(sel.at(0)), recursive)) {
+        // handle errors
         default:
             break;
         }
+        // update fs_model
     }
 }
 
@@ -53,9 +56,11 @@ void MainWindow::unhideSolacedFile()
     Q_ASSERT(sel.count() <= 1);
     if (sel.count() == 1) {
         switch (hd_model->unhideFile(sel.at(0))) {
+        // handle errors
         default:
             break;
         }
+        // update fs_model
     }
 }
 
