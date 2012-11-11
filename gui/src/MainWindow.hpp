@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QFileSystemModel>
+#include <QDirModel>
 
 #include "HiddenModel.h"
 #include "DriverGate.hpp"
@@ -28,10 +28,11 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QFileSystemModel *fs_model;
+    QDirModel *fs_model;
     HiddenModel *hd_model;
 
     void setupUi();
+    void displayErrorMessage(HiddenModel::ErrorCode err);
 };
 
 #endif // MAINWINDOW_H

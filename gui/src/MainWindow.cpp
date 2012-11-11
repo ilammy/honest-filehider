@@ -2,6 +2,7 @@
 #include "ui_MainWindow.h"
 
 #include <QFileDialog>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent),
@@ -13,8 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::setupUi()
 {
-    fs_model = new QFileSystemModel(this);
-    fs_model->setRootPath(QDir::rootPath());
+    fs_model = new QDirModel(this);
     ui->fs_tree->setModel(fs_model);
     ui->fs_tree->setColumnHidden(1, true);
     ui->fs_tree->setColumnHidden(2, true);
@@ -37,31 +37,61 @@ MainWindow::~MainWindow()
 
 void MainWindow::hideVictimFile()
 {
+again:
     QModelIndexList sel = ui->fs_tree->selectionModel()->selectedRows();
     Q_ASSERT(sel.count() <= 1);
-    if (sel.count() == 1) {
-        bool recursive = ui->recursive_checkbox->isChecked();
-        switch (hd_model->hideFile(fs_model->filePath(sel.at(0)), recursive)) {
-        // handle errors
-        default:
-            break;
-        }
-        // update fs_model
+    if (sel.count() == 0) {
+        return;
     }
+    bool recursive = ui->recursive_checkbox->isChecked();
+    HiddenModel::ErrorCode err;
+    err = hd_model->hideFile(fs_model->filePath(sel.at(0)), recursive);
+    switch (err) {
+    case HiddenModel::DEVICE_NOT_FOUND:
+    {   QMessageBox::StandardButton choice = QMessageBox::critical(
+            this, tr("Humble error"),
+            tr("Driver communication file could not be found. "
+               "Would you like to select another one?"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::Yes);
+        if (choice == QMessageBox::No) {
+            return;
+        }
+        QString filename = QFileDialog::getOpenFileName(
+            this, tr("Select the driver communication file"));
+        if (!filename.isNull()) {
+            // set driver name & try again
+            goto again;
+        }
+        return;
+    }
+    case HiddenModel::DEVICE_BUSY:
+    case HiddenModel::ALREADY_HIDDEN:
+    case HiddenModel::OPEN_FILE_PROBLEM:
+    case HiddenModel::MOUNT_POINT:
+    case HiddenModel::HIDING_PROBLEM:
+        displayErrorMessage(err);
+        return;
+    default:
+        break;
+    }
+    // update fs_model
+    fs_model->refresh2();
 }
 
 void MainWindow::unhideSolacedFile()
 {
     QModelIndexList sel = ui->hidden_view->selectionModel()->selectedRows();
     Q_ASSERT(sel.count() <= 1);
-    if (sel.count() == 1) {
-        switch (hd_model->unhideFile(sel.at(0))) {
-        // handle errors
-        default:
-            break;
-        }
-        // update fs_model
+    if (sel.count() == 0) {
+        return;
     }
+    switch (hd_model->unhideFile(sel.at(0))) {
+    // handle errors
+    default:
+        break;
+    }
+    // update fs_model
 }
 
 void MainWindow::selectVictimFile()
@@ -92,4 +122,30 @@ void MainWindow::scrollFsTreeTo(const QString &path)
         ui->fs_tree->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect);
         ui->fs_tree->scrollTo(index, QAbstractItemView::PositionAtCenter);
     }
+}
+
+void MainWindow::displayErrorMessage(HiddenModel::ErrorCode err)
+{
+    // too lazy to create a map
+    QString message;
+    switch (err) {
+    case HiddenModel::DEVICE_BUSY:
+        message = tr("Device is busy, try again later");
+        break;
+    case HiddenModel::ALREADY_HIDDEN:
+        message = tr("File is already hidden");
+        break;
+    case HiddenModel::OPEN_FILE_PROBLEM:
+        message = tr("Problems with opening device file. Check permissons");
+        break;
+    case HiddenModel::MOUNT_POINT:
+        message = tr("Hiding of mount points and their direct descendants is prohibited");
+        break;
+    case HiddenModel::HIDING_PROBLEM:
+        message = tr("Internal problems in the module");
+        break;
+    default:
+        return;
+    }
+    QMessageBox::critical(this, tr("Humble error"), message);
 }

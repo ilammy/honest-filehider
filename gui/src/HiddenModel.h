@@ -12,7 +12,6 @@
 class HiddenModel : public QAbstractItemModel {
 public:
     enum ErrorCode { OKAY,
-                     INVALID_INDEX,
                      ALREADY_HIDDEN,
                      DEVICE_NOT_FOUND,
                      DEVICE_BUSY,
@@ -48,6 +47,7 @@ private:
     ErrorCode hideDir(QFileInfo &info, bool recursive);
 
     ErrorCode doHideFile(const QModelIndex &parent, const QFileInfo &file);
+    ErrorCode internalHideFile(const QFileInfo &file, quint64 *ino);
 
     bool fileAlreadyHidden(const QFileInfo &file, const QStringList &dir) const;
     bool dirAlreadyHidden(const QStringList &dirpath) const;

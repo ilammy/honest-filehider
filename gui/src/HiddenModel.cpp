@@ -129,9 +129,7 @@ HiddenModel::ErrorCode
 HiddenModel::doHideFile(const QModelIndex &parent, const QFileInfo &file)
 {
     quint64 ino;
-    Q_ASSERT(gate->isOpen());
-    const char *path = file.absoluteFilePath().toStdString().c_str();
-    ErrorCode err = translate(gate->hide(path, &ino));
+    ErrorCode err = internalHideFile(file, &ino);
     if (err != OKAY) {
         return err;
     }
@@ -141,6 +139,14 @@ HiddenModel::doHideFile(const QModelIndex &parent, const QFileInfo &file)
     the(parent)->append(child);
     endInsertRows();
     return OKAY;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::internalHideFile(const QFileInfo &file, quint64 *ino)
+{
+    Q_ASSERT(gate->isOpen());
+    const char *path = file.absoluteFilePath().toStdString().c_str();
+    return translate(gate->hide(path, ino));
 }
 
 HiddenModel::ErrorCode
@@ -162,8 +168,17 @@ HiddenModel::hideDir(QFileInfo &dir, bool recursive)
         if (err != OKAY) {
             return err;
         }
-        // hide the dir
-        // check for errors
+        ErrorCode err = translate(gate->tryOpen());
+        if (err != OKAY) {
+            return err;
+        }
+        quint64 ino;
+        err = internalHideFile(dir, &ino);
+        gate->close();
+        if (err != OKAY) {
+            return err;
+        }
+        the(dirIndex)->setIno(ino);
         the(dirIndex)->hide(true);
     }
     return OKAY;
@@ -256,11 +271,12 @@ HiddenModel::hideChildFiles(const QModelIndex &parentIndex, const QDir &dir)
         }
         err = doHideFile(parentIndex, entry);
         if (err != OKAY) {
-            return err;
+            goto out;
         }
     }
+out:
     gate->close();
-    return OKAY;
+    return err;
 }
 
 HiddenModel::ErrorCode
@@ -332,8 +348,7 @@ HiddenModel::ErrorCode HiddenModel::translate(DriverGate::OpenStatus status)
 HiddenModel::ErrorCode HiddenModel::translate(DriverGate::Status status)
 {
     Q_ASSERT(status != DriverGate::INVALID_FORMAT
-          && status != DriverGate::NOT_OPEN
-          && status != DriverGate::UNKNOWN_FILE);
+          && status != DriverGate::NOT_OPEN);
     switch (status) {
     case DriverGate::OKAY:           return OKAY;
     case DriverGate::MOUNT_POINT:    return MOUNT_POINT;
