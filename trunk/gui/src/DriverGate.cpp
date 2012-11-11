@@ -107,7 +107,7 @@ bool DriverGate::gotError() const
 typename DriverGate::Status DriverGate::parseError() const
 {
     int code;
-    sscanf(obuffer, "E%d", &code);
+    sscanf(ibuffer, "E%d", &code);
     if (code < 0) {
         code = -code;
     }

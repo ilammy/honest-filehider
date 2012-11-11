@@ -14,7 +14,8 @@ public:
     ~HiddenFile();
 
     const QString& getName() const { return name; }
-    const quint64  getIno()  const { return ino; }
+    void setIno(quint64 ino) { this->ino = ino; }
+    quint64 getIno()  const { return ino; }
 
     void hide(bool really) { hidden = really; }
     bool isHidden() const { return hidden; }
