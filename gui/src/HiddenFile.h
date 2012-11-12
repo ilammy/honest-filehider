@@ -23,6 +23,7 @@ public:
 
     void append(HiddenFile *file);
     void removeAt(int idx);
+    void removeAll();
     HiddenFile* extractAt(int idx);
 
     HiddenFile* childAt(int idx) { return children[idx]; }

@@ -38,3 +38,6 @@ test {
     test/Test_HiddenModel.h \
     test/Test_HiddenFile.h
 }
+
+RESOURCES += \
+    res/resources.qrc

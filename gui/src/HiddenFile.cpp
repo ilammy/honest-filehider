@@ -26,6 +26,12 @@ void HiddenFile::removeAt(int idx)
     delete orphan;
 }
 
+void HiddenFile::removeAll()
+{
+    qDeleteAll(children);
+    children.clear();
+}
+
 HiddenFile* HiddenFile::extractAt(int idx)
 {
     HiddenFile *orphan = children[idx];
