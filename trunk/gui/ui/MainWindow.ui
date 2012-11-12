@@ -183,8 +183,8 @@
    <slot>scrollFsTreeTo(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>23</y>
+     <x>117</x>
+     <y>79</y>
     </hint>
     <hint type="destinationlabel">
      <x>138</x>
@@ -199,12 +199,28 @@
    <slot>selectVictimFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>281</x>
-     <y>26</y>
+     <x>590</x>
+     <y>78</y>
     </hint>
     <hint type="destinationlabel">
      <x>486</x>
      <y>19</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>unhide_all_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>unhideAll()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>322</x>
+     <y>344</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>395</x>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -214,5 +230,6 @@
   <slot>hideVictimFile()</slot>
   <slot>unhideSolacedFile()</slot>
   <slot>scrollFsTreeTo(QString)</slot>
+  <slot>unhideAll()</slot>
  </slots>
 </ui>

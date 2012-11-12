@@ -21,6 +21,7 @@ public:
 private slots:
     void hideVictimFile();
     void unhideSolacedFile();
+    void unhideAll();
     void selectVictimFile();
 
     void updatePathViewer();

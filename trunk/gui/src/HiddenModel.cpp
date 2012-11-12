@@ -59,12 +59,30 @@ int HiddenModel::rowCount(const QModelIndex &parent) const
     return the(parent)->childrenCount();
 }
 
+#include <QPixmap>
+
 QVariant HiddenModel::data(const QModelIndex &index, int role) const
 {
     switch (role) {
     case Qt::DisplayRole:
         return QVariant(the(index)->getName());
 
+    case Qt::DecorationRole:
+    {   QString path;
+        HiddenFile *file = the(index);
+        if (file->isDir()) {
+            if (file->isHidden()) {
+                path = ":/icon/hiddendir.png";
+            }
+            else {
+                path = ":/icon/dir.png";
+            }
+        }
+        else {
+            path = ":/icon/file.png";
+        }
+        return QVariant(QPixmap(path));
+    }
     default:
         return QVariant();
     }
@@ -106,6 +124,24 @@ HiddenModel::unhideFile(const QModelIndex &index)
     else {
         return unhideFile_(index);
     }
+}
+
+HiddenModel::ErrorCode
+HiddenModel::unhideAll()
+{
+    ErrorCode err = translate(gate->tryOpen());
+    if (err != OKAY) {
+        return err;
+    }
+    err = translate(gate->unhideAll());
+    gate->close();
+    if (err != OKAY) {
+        return err;
+    }
+    beginResetModel();
+    root->removeAll();
+    endResetModel();
+    return OKAY;
 }
 
 HiddenModel::ErrorCode

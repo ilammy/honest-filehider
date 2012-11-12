@@ -75,8 +75,7 @@ again:
     default:
         break;
     }
-    // update fs_model
-    fs_model->refresh2();
+    fs_model->refresh();
 }
 
 void MainWindow::unhideSolacedFile()
@@ -91,7 +90,17 @@ void MainWindow::unhideSolacedFile()
     default:
         break;
     }
-    // update fs_model
+    fs_model->refresh();
+}
+
+void MainWindow::unhideAll()
+{
+    switch (hd_model->unhideAll()) {
+    // handle errors
+    default:
+        break;
+    }
+    fs_model->refresh();
 }
 
 void MainWindow::selectVictimFile()

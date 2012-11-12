@@ -33,6 +33,7 @@ public:
 
     ErrorCode hideFile(const QString &path, bool recursive);
     ErrorCode unhideFile(const QModelIndex &index);
+    ErrorCode unhideAll();
 
 private:
     DriverGate *gate;
