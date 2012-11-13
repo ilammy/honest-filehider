@@ -48,57 +48,59 @@ again:
     err = hd_model->hideFile(fs_model->filePath(sel.at(0)), recursive);
     switch (err) {
     case HiddenModel::DEVICE_NOT_FOUND:
-    {   QMessageBox::StandardButton choice = QMessageBox::critical(
-            this, tr("Humble error"),
-            tr("Driver communication file could not be found. "
-               "Would you like to select another one?"),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::Yes);
-        if (choice == QMessageBox::No) {
-            return;
-        }
-        QString filename = QFileDialog::getOpenFileName(
-            this, tr("Select the driver communication file"));
-        if (!filename.isNull()) {
-            // set driver name & try again
+        if (tryChangeDevice()) {
             goto again;
         }
         return;
-    }
-    case HiddenModel::DEVICE_BUSY:
-    case HiddenModel::ALREADY_HIDDEN:
-    case HiddenModel::OPEN_FILE_PROBLEM:
-    case HiddenModel::MOUNT_POINT:
-    case HiddenModel::HIDING_PROBLEM:
+    case HiddenModel::OKAY:
+        break;
+    default:
         displayErrorMessage(err);
         return;
-    default:
-        break;
     }
     fs_model->refresh();
 }
 
 void MainWindow::unhideSolacedFile()
 {
+again:
     QModelIndexList sel = ui->hidden_view->selectionModel()->selectedRows();
     Q_ASSERT(sel.count() <= 1);
     if (sel.count() == 0) {
         return;
     }
-    switch (hd_model->unhideFile(sel.at(0))) {
-    // handle errors
-    default:
+    bool recursive = ui->recursive_unhide_checkbox->isChecked();
+    HiddenModel::ErrorCode err = hd_model->unhideFile(sel.at(0), recursive);
+    switch (err) {
+    case HiddenModel::DEVICE_NOT_FOUND:
+        if (tryChangeDevice()) {
+            goto again;
+        }
+        return;
+    case HiddenModel::OKAY:
         break;
+    default:
+        displayErrorMessage(err);
+        return;
     }
     fs_model->refresh();
 }
 
 void MainWindow::unhideAll()
 {
-    switch (hd_model->unhideAll()) {
-    // handle errors
-    default:
+again:
+    HiddenModel::ErrorCode err = hd_model->unhideAll();
+    switch (err) {
+    case HiddenModel::DEVICE_NOT_FOUND:
+        if (tryChangeDevice()) {
+            goto again;
+        }
+        return;
+    case HiddenModel::OKAY:
         break;
+    default:
+        displayErrorMessage(err);
+        return;
     }
     fs_model->refresh();
 }
@@ -133,6 +135,26 @@ void MainWindow::scrollFsTreeTo(const QString &path)
     }
 }
 
+bool MainWindow::tryChangeDevice()
+{
+    QMessageBox::StandardButton choice = QMessageBox::critical(
+        this, tr("Humble error"),
+        tr("Driver communication file could not be found. "
+           "Would you like to select another one?"),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::Yes);
+    bool changed = false;
+    if (choice == QMessageBox::Yes) {
+        QString filename = QFileDialog::getOpenFileName(
+            this, tr("Select the driver communication file"));
+        if (!filename.isNull()) {
+            // set new driver name
+            changed = true;
+        }
+    }
+    return changed;
+}
+
 void MainWindow::displayErrorMessage(HiddenModel::ErrorCode err)
 {
     // too lazy to create a map
@@ -152,6 +174,12 @@ void MainWindow::displayErrorMessage(HiddenModel::ErrorCode err)
         break;
     case HiddenModel::HIDING_PROBLEM:
         message = tr("Internal problems in the module");
+        break;
+    case HiddenModel::HIDDEN_PARENT:
+        message = tr("Could not unhide the file while its parent is still hidden");
+        break;
+    case HiddenModel::LOST_FILE:
+        message = tr("Could not find the requested file.");
         break;
     default:
         return;

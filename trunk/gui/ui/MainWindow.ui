@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>601</width>
-    <height>393</height>
+    <width>617</width>
+    <height>409</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,10 +41,10 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <property name="childrenCollapsible">
-       <bool>false</bool>
-      </property>
-      <widget class="QWidget" name="layoutWidget">
+      <widget class="QGroupBox" name="groupBox_2">
+       <property name="title">
+        <string>Filesystem</string>
+       </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QTreeView" name="fs_tree">
@@ -86,7 +86,10 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="layoutWidget">
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Hidden contents</string>
+       </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QTreeView" name="hidden_view">
@@ -118,6 +121,13 @@
            </spacer>
           </item>
           <item>
+           <widget class="QCheckBox" name="recursive_unhide_checkbox">
+            <property name="text">
+             <string>&amp;Recursive</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="unhide_button">
             <property name="text">
              <string>&amp;Unhide</string>
@@ -132,50 +142,10 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <tabstops>
-  <tabstop>fs_tree</tabstop>
-  <tabstop>hide_button</tabstop>
-  <tabstop>recursive_checkbox</tabstop>
-  <tabstop>unhide_all_button</tabstop>
-  <tabstop>unhide_button</tabstop>
- </tabstops>
  <resources/>
  <connections>
-  <connection>
-   <sender>hide_button</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>hideVictimFile()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>67</x>
-     <y>353</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>181</x>
-     <y>340</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>unhide_button</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>unhideSolacedFile()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>533</x>
-     <y>353</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>493</x>
-     <y>341</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>path_display</sender>
    <signal>textEdited(QString)</signal>
@@ -187,8 +157,8 @@
      <y>79</y>
     </hint>
     <hint type="destinationlabel">
-     <x>138</x>
-     <y>367</y>
+     <x>168</x>
+     <y>31</y>
     </hint>
    </hints>
   </connection>
@@ -209,18 +179,50 @@
    </hints>
   </connection>
   <connection>
+   <sender>hide_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>hideVictimFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>87</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>254</x>
+     <y>115</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>unhide_all_button</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
    <slot>unhideAll()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>322</x>
-     <y>344</y>
+     <x>374</x>
+     <y>379</y>
     </hint>
     <hint type="destinationlabel">
-     <x>395</x>
-     <y>358</y>
+     <x>401</x>
+     <y>116</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>unhide_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>unhideSolacedFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>524</x>
+     <y>367</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>500</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>

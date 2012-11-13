@@ -34,6 +34,7 @@ private:
 
     void setupUi();
     void displayErrorMessage(HiddenModel::ErrorCode err);
+    bool tryChangeDevice();
 };
 
 #endif // MAINWINDOW_H
