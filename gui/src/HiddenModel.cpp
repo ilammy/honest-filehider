@@ -1,6 +1,6 @@
 #include "HiddenModel.h"
 
-#include <QDir>
+#include <QPixmap>
 
 HiddenModel::HiddenModel(DriverGate *gate, QObject *parent)
   : QAbstractItemModel(parent),
@@ -59,8 +59,6 @@ int HiddenModel::rowCount(const QModelIndex &parent) const
     return the(parent)->childrenCount();
 }
 
-#include <QPixmap>
-
 QVariant HiddenModel::data(const QModelIndex &index, int role) const
 {
     switch (role) {
@@ -116,10 +114,10 @@ HiddenModel::hideFile(const QString &path, bool recursive)
 }
 
 HiddenModel::ErrorCode
-HiddenModel::unhideFile(const QModelIndex &index)
+HiddenModel::unhideFile(const QModelIndex &index, bool recursive)
 {
     if (the(index)->isDir()) {
-        return unhideDir(index);
+        return unhideDir(index, recursive);
     }
     else {
         return unhideFile_(index);
@@ -307,10 +305,9 @@ HiddenModel::hideChildFiles(const QModelIndex &parentIndex, const QDir &dir)
         }
         err = doHideFile(parentIndex, entry);
         if (err != OKAY) {
-            goto out;
+            break;
         }
     }
-out:
     gate->close();
     return err;
 }
@@ -334,8 +331,56 @@ HiddenModel::hideChildDirs(const QModelIndex &parentIndex, const QDir &dir)
 }
 
 HiddenModel::ErrorCode
-HiddenModel::unhideDir(const QModelIndex &index)
+HiddenModel::unhideDir(const QModelIndex &index, bool recursive)
 {
+    HiddenFile *file = the(index);
+    if (file->parent()->isHidden()) {
+        return HIDDEN_PARENT;
+    }
+    ErrorCode err = translate(gate->tryOpen());
+    if (err != OKAY) {
+        return err;
+    }
+    if (file->isHidden()) {
+        err = translate(gate->unhide(file->getIno()));
+        if (err != OKAY) {
+            goto out;
+        }
+        file->hide(false);
+    }
+    if (recursive) {
+        err = unhideTree(file);
+        if (err != OKAY) {
+            goto out;
+        }
+        beginRemoveRows(index.parent(), index.row(), index.row());
+        file->parent()->removeAt(file->row());
+        endRemoveRows();
+    }
+out:
+    gate->close();
+    return err;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::unhideTree(HiddenFile *root)
+{
+    Q_ASSERT(gate->isOpen());
+    ErrorCode err;
+    for (int i = 0, len = root->childrenCount(); i < len; ++i) {
+        HiddenFile *child = root->childAt(i);
+        err = translate(gate->unhide(child->getIno()));
+        if (err != OKAY) {
+            return err;
+        }
+        if (child->isDir()) {
+            child->hide(true);
+            err = unhideTree(child);
+            if (err != OKAY) {
+                return err;
+            }
+        }
+    }
     return OKAY;
 }
 
@@ -390,6 +435,7 @@ HiddenModel::ErrorCode HiddenModel::translate(DriverGate::Status status)
     case DriverGate::MOUNT_POINT:    return MOUNT_POINT;
     case DriverGate::ALREADY_HIDDEN: return ALREADY_HIDDEN;
     case DriverGate::HIDDEN_PARENT:  return HIDDEN_PARENT;
+    case DriverGate::UNKNOWN_FILE:   return LOST_FILE;
     default:
         return HIDING_PROBLEM;
     }

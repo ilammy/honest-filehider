@@ -18,6 +18,7 @@ public:
                      OPEN_FILE_PROBLEM,
                      MOUNT_POINT,
                      HIDDEN_PARENT,
+                     LOST_FILE,
                      HIDING_PROBLEM
                    };
 public:
@@ -32,7 +33,7 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
 
     ErrorCode hideFile(const QString &path, bool recursive);
-    ErrorCode unhideFile(const QModelIndex &index);
+    ErrorCode unhideFile(const QModelIndex &index, bool recursive);
     ErrorCode unhideAll();
 
 private:
@@ -62,9 +63,10 @@ private:
     ErrorCode hideChildDirs(const QModelIndex &parentIndex, const QDir &dir);
 
     ErrorCode unhideFile_(const QModelIndex &index);
-    ErrorCode unhideDir(const QModelIndex &index);
+    ErrorCode unhideDir(const QModelIndex &index, bool recursive);
 
     ErrorCode doUnhideFile(const QModelIndex &parent, HiddenFile *file);
+    ErrorCode unhideTree(HiddenFile *root);
 };
 
 #endif // HIDDENMODEL_H
