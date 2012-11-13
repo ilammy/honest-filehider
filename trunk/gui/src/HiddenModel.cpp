@@ -202,6 +202,10 @@ HiddenModel::hideDir(QFileInfo &dir, bool recursive)
         if (err != OKAY) {
             return err;
         }
+    }
+    the_dir.refresh();
+    int childCount = the_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).count();
+    if (recursive || childCount == 0) {
         ErrorCode err = translate(gate->tryOpen());
         if (err != OKAY) {
             return err;
@@ -413,6 +417,31 @@ HiddenModel::doUnhideFile(const QModelIndex &parent, HiddenFile *file)
     file->parent()->removeAt(index);
     endRemoveRows();
     return OKAY;
+}
+
+HiddenModel::ErrorCode
+HiddenModel::unhideParents(const QModelIndex &index)
+{
+    ErrorCode err = translate(gate->tryOpen());
+    if (err != OKAY) {
+        return err;
+    }
+    QList<HiddenFile*> toUnhide;
+    for (HiddenFile *file = the(index)->parent();
+         file->isHidden() && file != root;
+         file = file->parent())
+    {
+        toUnhide.push_front(file);
+    }
+    foreach (HiddenFile *file, toUnhide) {
+        err = translate(gate->unhide(file->getIno()));
+        if (err != OKAY) {
+            break;
+        }
+        file->hide(false);
+    }
+    gate->close();
+    return err;
 }
 
 HiddenModel::ErrorCode HiddenModel::translate(DriverGate::OpenStatus status)

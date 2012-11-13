@@ -35,6 +35,7 @@ private:
     void setupUi();
     void displayErrorMessage(HiddenModel::ErrorCode err);
     bool tryChangeDevice();
+    bool tryUnhideParents(const QModelIndex &index);
 };
 
 #endif // MAINWINDOW_H
