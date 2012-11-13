@@ -72,6 +72,11 @@ again:
     bool recursive = ui->recursive_unhide_checkbox->isChecked();
     HiddenModel::ErrorCode err = hd_model->unhideFile(sel.at(0), recursive);
     switch (err) {
+    case HiddenModel::HIDDEN_PARENT:
+        if (tryUnhideParents(sel.at(0))) {
+            goto again;
+        }
+        return;
     case HiddenModel::DEVICE_NOT_FOUND:
         if (tryChangeDevice()) {
             goto again;
@@ -155,6 +160,25 @@ bool MainWindow::tryChangeDevice()
     return changed;
 }
 
+bool MainWindow::tryUnhideParents(const QModelIndex &index)
+{
+    QMessageBox::StandardButton choice = QMessageBox::critical(
+        this, tr("Humble error"),
+        tr("Cannot unhide the file while its parent is still hidden. "
+           "Would you like to unhide its parents?"),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    bool didHide = (choice == QMessageBox::Yes);
+    if (didHide) {
+        HiddenModel::ErrorCode err = hd_model->unhideParents(index);
+        if (err != HiddenModel::OKAY) {
+            didHide = false;
+            displayErrorMessage(err);
+        }
+    }
+    return didHide;
+}
+
 void MainWindow::displayErrorMessage(HiddenModel::ErrorCode err)
 {
     // too lazy to create a map
@@ -176,7 +200,7 @@ void MainWindow::displayErrorMessage(HiddenModel::ErrorCode err)
         message = tr("Internal problems in the module");
         break;
     case HiddenModel::HIDDEN_PARENT:
-        message = tr("Could not unhide the file while its parent is still hidden");
+        message = tr("Cannot unhide the file while its parent is still hidden");
         break;
     case HiddenModel::LOST_FILE:
         message = tr("Could not find the requested file.");
