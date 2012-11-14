@@ -25,6 +25,7 @@ private slots:
     void selectVictimFile();
 
     void updatePathViewer();
+    void manualPathEntered();
     void scrollFsTreeTo(const QString &path);
 
 private:

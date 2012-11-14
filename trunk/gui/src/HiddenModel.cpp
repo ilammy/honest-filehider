@@ -385,6 +385,9 @@ HiddenModel::unhideDir(const QModelIndex &index, bool recursive)
         endRemoveRows();
         removeTrashDirectories(index.parent());
     }
+    else {
+        removeTrashDirectories(index);
+    }
 out:
     gate->close();
     return err;
