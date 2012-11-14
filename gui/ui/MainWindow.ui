@@ -144,17 +144,28 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>fs_tree</tabstop>
+  <tabstop>recursive_checkbox</tabstop>
+  <tabstop>hide_button</tabstop>
+  <tabstop>path_display</tabstop>
+  <tabstop>select_file_button</tabstop>
+  <tabstop>hidden_view</tabstop>
+  <tabstop>recursive_unhide_checkbox</tabstop>
+  <tabstop>unhide_button</tabstop>
+  <tabstop>unhide_all_button</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
    <sender>path_display</sender>
-   <signal>textEdited(QString)</signal>
+   <signal>editingFinished()</signal>
    <receiver>MainWindow</receiver>
-   <slot>scrollFsTreeTo(QString)</slot>
+   <slot>manualPathEntered()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>117</x>
-     <y>79</y>
+     <x>116</x>
+     <y>80</y>
     </hint>
     <hint type="destinationlabel">
      <x>168</x>
@@ -233,5 +244,6 @@
   <slot>unhideSolacedFile()</slot>
   <slot>scrollFsTreeTo(QString)</slot>
   <slot>unhideAll()</slot>
+  <slot>manualPathEntered()</slot>
  </slots>
 </ui>

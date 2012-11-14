@@ -131,11 +131,20 @@ void MainWindow::updatePathViewer()
     }
 }
 
+void MainWindow::manualPathEntered()
+{
+    scrollFsTreeTo(ui->path_display->text());
+}
+
 void MainWindow::scrollFsTreeTo(const QString &path)
 {
     QModelIndex index = fs_model->index(path);
     if (index.isValid()) {
-        ui->fs_tree->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect);
+        ui->fs_tree->selectionModel()
+            ->setCurrentIndex(index, QItemSelectionModel::Clear
+                                   | QItemSelectionModel::Select
+                                   | QItemSelectionModel::Current
+                                   | QItemSelectionModel::Rows);
         ui->fs_tree->scrollTo(index, QAbstractItemView::PositionAtCenter);
     }
 }
