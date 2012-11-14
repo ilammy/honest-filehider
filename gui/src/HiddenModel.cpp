@@ -297,6 +297,9 @@ QModelIndex HiddenModel::ensureDirPath(const QStringList &dirpath)
 
 void HiddenModel::removeTrashDirectories(const QModelIndex &index)
 {
+    if (the(index)->childrenCount() > 0) {
+        return;
+    }
     QModelIndex top = index;
     QModelIndex prev;
     while (top.isValid()) {
