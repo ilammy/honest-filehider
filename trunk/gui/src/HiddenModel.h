@@ -56,6 +56,7 @@ private:
     bool dirAlreadyHidden(const QStringList &dirpath) const;
 
     QModelIndex ensureDirPath(const QStringList &dirpath);
+    void removeTrashDirectories(const QModelIndex &index);
 
     static QStringList tokenizeDirPath(QDir dir);
     HiddenFile* tryDescent(const QStringList &dirpath) const;

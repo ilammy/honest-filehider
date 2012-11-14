@@ -295,6 +295,26 @@ QModelIndex HiddenModel::ensureDirPath(const QStringList &dirpath)
     return currentIndex;
 }
 
+void HiddenModel::removeTrashDirectories(const QModelIndex &index)
+{
+    QModelIndex top = index;
+    QModelIndex prev;
+    while (top.isValid()) {
+        if (the(top)->childrenCount() > 1) {
+            break;
+        }
+        prev = top;
+        top = top.parent();
+    }
+    if (top == index) {
+        return;
+    }
+    int idx = the(prev)->row();
+    beginRemoveRows(top, idx, idx);
+    the(top)->removeAt(idx);
+    endRemoveRows();
+}
+
 HiddenModel::ErrorCode
 HiddenModel::hideChildFiles(const QModelIndex &parentIndex, const QDir &dir)
 {
@@ -360,6 +380,7 @@ HiddenModel::unhideDir(const QModelIndex &index, bool recursive)
         beginRemoveRows(index.parent(), index.row(), index.row());
         file->parent()->removeAt(file->row());
         endRemoveRows();
+        removeTrashDirectories(index.parent());
     }
 out:
     gate->close();
@@ -416,6 +437,7 @@ HiddenModel::doUnhideFile(const QModelIndex &parent, HiddenFile *file)
     beginRemoveRows(parent, index, index);
     file->parent()->removeAt(index);
     endRemoveRows();
+    removeTrashDirectories(parent);
     return OKAY;
 }
 
