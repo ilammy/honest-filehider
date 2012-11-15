@@ -37,6 +37,8 @@ public:
     ErrorCode unhideAll();
     ErrorCode unhideParents(const QModelIndex &index);
 
+    void changeDevice(const QString &path);
+
 private:
     DriverGate *gate;
     HiddenFile *root;

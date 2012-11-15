@@ -23,6 +23,13 @@ DriverGate::~DriverGate()
     delete [] device;
 }
 
+void DriverGate::setDevice(const char *device)
+{
+    delete [] this->device;
+    this->device = new char[strlen(device) + 1];
+    strcpy(this->device, device);
+}
+
 typename DriverGate::OpenStatus DriverGate::tryOpen()
 {
     if (open) {

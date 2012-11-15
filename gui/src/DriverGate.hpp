@@ -31,6 +31,8 @@ public:
     OpenStatus tryOpen();
     void close();
 
+    void setDevice(const char *device);
+
     Status hide(const char *path, unsigned long long *ino);
     Status unhide(unsigned long long ino);
     Status unhideAll();

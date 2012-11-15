@@ -96,6 +96,11 @@ HiddenFile* HiddenModel::the(const QModelIndex &index) const
     }
 }
 
+void HiddenModel::changeDevice(const QString &path)
+{
+    gate->setDevice(path.toAscii().data());
+}
+
 //
 // Hidden file tree management
 //
@@ -152,6 +157,7 @@ HiddenModel::hideFile(QFileInfo &file)
     QModelIndex parent = ensureDirPath(parentPath);
     ErrorCode err = translate(gate->tryOpen());
     if (err != OKAY) {
+        removeTrashDirectories(parent);
         return err;
     }
     err = doHideFile(parent, file);
@@ -165,6 +171,7 @@ HiddenModel::doHideFile(const QModelIndex &parent, const QFileInfo &file)
     quint64 ino;
     ErrorCode err = internalHideFile(file, &ino);
     if (err != OKAY) {
+        removeTrashDirectories(parent);
         return err;
     }
     int index = the(parent)->childrenCount();
@@ -191,35 +198,39 @@ HiddenModel::hideDir(QFileInfo &dir, bool recursive)
     if (dirAlreadyHidden(dirpath)) {
         return ALREADY_HIDDEN;
     }
+    int childCount;
     ErrorCode err = OKAY;
     QModelIndex dirIndex = ensureDirPath(dirpath);
     err = hideChildFiles(dirIndex, the_dir);
     if (err != OKAY) {
-        return err;
+        goto error;
     }
     if (recursive) {
         err = hideChildDirs(dirIndex, the_dir);
         if (err != OKAY) {
-            return err;
+            goto error;
         }
     }
     the_dir.refresh();
-    int childCount = the_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).count();
+    childCount = the_dir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).count();
     if (recursive || childCount == 0) {
         ErrorCode err = translate(gate->tryOpen());
         if (err != OKAY) {
-            return err;
+            goto error;
         }
         quint64 ino;
         err = internalHideFile(dir, &ino);
         gate->close();
         if (err != OKAY) {
-            return err;
+            goto error;
         }
         the(dirIndex)->setIno(ino);
         the(dirIndex)->hide(true);
     }
     return OKAY;
+error:
+    removeTrashDirectories(dirIndex);
+    return err;
 }
 
 bool HiddenModel::fileAlreadyHidden(const QFileInfo &info,
@@ -297,6 +308,9 @@ QModelIndex HiddenModel::ensureDirPath(const QStringList &dirpath)
 
 void HiddenModel::removeTrashDirectories(const QModelIndex &index)
 {
+    if (!index.isValid()) {
+        return;
+    }
     if (the(index)->childrenCount() > 0) {
         return;
     }
@@ -332,6 +346,7 @@ HiddenModel::hideChildFiles(const QModelIndex &parentIndex, const QDir &dir)
         }
         err = doHideFile(parentIndex, entry);
         if (err != OKAY) {
+            removeTrashDirectories(parentIndex);
             break;
         }
     }
@@ -351,6 +366,7 @@ HiddenModel::hideChildDirs(const QModelIndex &parentIndex, const QDir &dir)
         QFileInfo theDir(entry);
         ErrorCode err = hideDir(theDir, true);
         if (err != OKAY) {
+            removeTrashDirectories(parentIndex);
             return err;
         }
     }
