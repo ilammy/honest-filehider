@@ -37,15 +37,21 @@ MainWindow::~MainWindow()
 
 void MainWindow::hideVictimFile()
 {
-again:
     QModelIndexList sel = ui->fs_tree->selectionModel()->selectedRows();
     Q_ASSERT(sel.count() <= 1);
     if (sel.count() == 0) {
         return;
     }
+    QFileInfo file = fs_model->fileInfo(sel.at(0));
+    bool isSymlink = file.isSymLink();
+    QString symlinkTarget;
+    if (isSymlink) {
+        symlinkTarget = file.symLinkTarget();
+    }
     bool recursive = ui->recursive_checkbox->isChecked();
     HiddenModel::ErrorCode err;
-    err = hd_model->hideFile(fs_model->filePath(sel.at(0)), recursive);
+again:
+    err = hd_model->hideFile(file.absoluteFilePath(), recursive);
     switch (err) {
     case HiddenModel::DEVICE_NOT_FOUND:
         if (tryChangeDevice()) {
@@ -57,6 +63,22 @@ again:
     default:
         displayErrorMessage(err);
         return;
+    }
+    if (isSymlink && ui->symlink_checkbox->isChecked()) {
+again_symlink:
+        err = hd_model->hideFile(symlinkTarget, recursive);
+        switch (err) {
+        case HiddenModel::DEVICE_NOT_FOUND:
+            if (tryChangeDevice()) {
+                goto again_symlink;
+            }
+            break;
+        case HiddenModel::OKAY:
+            break;
+        default:
+            displayErrorMessage(err);
+            break;
+        }
     }
     fs_model->refresh();
 }
@@ -123,7 +145,7 @@ void MainWindow::updatePathViewer()
 {
     QModelIndexList selection = ui->fs_tree->selectionModel()->selectedRows();
     if (selection.size() == 1) {
-        QString path = fs_model->filePath(selection.at(0));
+        QString path = fs_model->fileInfo(selection.at(0)).absoluteFilePath();
         ui->path_display->setText(path);
     }
     else {

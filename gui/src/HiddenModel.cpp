@@ -105,7 +105,7 @@ HiddenModel::hideFile(const QString &path, bool recursive)
 {
     QFileInfo info(path);
     Q_ASSERT(info.isAbsolute());
-    if (info.isFile()) {
+    if (info.isFile() || info.isSymLink()) {
         return hideFile(info);
     }
     else {
