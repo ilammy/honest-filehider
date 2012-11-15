@@ -24,7 +24,8 @@ private slots:
     void unhideAll();
     void selectVictimFile();
 
-    void updatePathViewer();
+    void visibleFileSelected();
+    void hiddenFileSelected();
     void manualPathEntered();
     void scrollFsTreeTo(const QString &path);
 

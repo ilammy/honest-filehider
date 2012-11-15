@@ -27,11 +27,15 @@ void MainWindow::setupUi()
 
     connect(ui->fs_tree->selectionModel(),
             SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-            this, SLOT(updatePathViewer()));
+            this, SLOT(visibleFileSelected()));
+    connect(ui->hidden_view->selectionModel(),
+            SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
+            this, SLOT(hiddenFileSelected()));
 }
 
 MainWindow::~MainWindow()
 {
+    hd_model->unhideAll();
     delete ui;
 }
 
@@ -141,12 +145,25 @@ void MainWindow::selectVictimFile()
     }
 }
 
-void MainWindow::updatePathViewer()
+void MainWindow::visibleFileSelected()
 {
     QModelIndexList selection = ui->fs_tree->selectionModel()->selectedRows();
     if (selection.size() == 1) {
         QString path = fs_model->fileInfo(selection.at(0)).absoluteFilePath();
         ui->path_display->setText(path);
+    }
+    else {
+        ui->path_display->setText("");
+    }
+}
+
+void MainWindow::hiddenFileSelected()
+{
+    QModelIndexList selection = ui->hidden_view->selectionModel()->selectedRows();
+    if (selection.size() == 1) {
+        QString path = hd_model->getClosestUnhiddenPath(selection.at(0));
+        ui->path_display->setText(path);
+        scrollFsTreeTo(path);
     }
     else {
         ui->path_display->setText("");
@@ -168,6 +185,7 @@ void MainWindow::scrollFsTreeTo(const QString &path)
                                    | QItemSelectionModel::Current
                                    | QItemSelectionModel::Rows);
         ui->fs_tree->scrollTo(index, QAbstractItemView::PositionAtCenter);
+        ui->fs_tree->expand(index);
     }
 }
 

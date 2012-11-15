@@ -41,6 +41,9 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
       <widget class="QGroupBox" name="groupBox_2">
        <property name="title">
         <string>Filesystem</string>
