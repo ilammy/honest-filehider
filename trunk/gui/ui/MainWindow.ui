@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>617</width>
-    <height>409</height>
+    <width>744</width>
+    <height>432</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,6 +66,13 @@
            <widget class="QCheckBox" name="recursive_checkbox">
             <property name="text">
              <string>&amp;Recursive</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="symlink_checkbox">
+            <property name="text">
+             <string>Hide &amp;symlink target</string>
             </property>
            </widget>
           </item>
