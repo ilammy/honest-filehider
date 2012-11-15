@@ -184,7 +184,7 @@ bool MainWindow::tryChangeDevice()
         QString filename = QFileDialog::getOpenFileName(
             this, tr("Select the driver communication file"));
         if (!filename.isNull()) {
-            // set new driver name
+            hd_model->changeDevice(filename);
             changed = true;
         }
     }
