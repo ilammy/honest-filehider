@@ -96,9 +96,38 @@ HiddenFile* HiddenModel::the(const QModelIndex &index) const
     }
 }
 
+//
+// Internal stuff
+//
+
 void HiddenModel::changeDevice(const QString &path)
 {
     gate->setDevice(path.toAscii().data());
+}
+
+QString HiddenModel::getClosestUnhiddenPath(const QModelIndex &index) const
+{
+    if (!index.isValid()) {
+        return QString();
+    }
+    HiddenFile *file = the(index);
+    while (file->isHidden() && file != root) {
+        file = file->parent();
+    }
+    if (file == root) {
+        return QString();
+    }
+    QString result = file->getName();
+    file = file->parent();
+    if (file == root) {
+        return result;
+    }
+    while (file->parent() != root) {
+        result.prepend('/').prepend(file->getName());
+        file = file->parent();
+    }
+    result.prepend(file->getName());
+    return result;
 }
 
 //

@@ -39,6 +39,8 @@ public:
 
     void changeDevice(const QString &path);
 
+    QString getClosestUnhiddenPath(const QModelIndex &index) const;
+
 private:
     DriverGate *gate;
     HiddenFile *root;
