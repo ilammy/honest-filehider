@@ -1,0 +1,177 @@
+== Протокол тестирования ==
+
+Билд: r30
+
+Тестируемые окружения:
+    *  Debian (kernel 3.2.0-3-686-pae)
+    *  Ubuntu (kernel 3.5.0-17-generic)
+    *  CentOS (kernel 2.6.32-279.el6.i686)
+
+<table>
+<tr><th>№</th><th>Debian</th><th>Ubuntu</th><th>CentOS</th><th>Тикеты</th></tr>
+<tr><td>1</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>2</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>3</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>4</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 2, issue 3, issue 4</td></tr>
+<tr><td>5</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 2, issue 3, issue 4</td></tr>
+<tr><td>6</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>7</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>8</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>9</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>10</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>11</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>12</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 1</td></tr>
+<tr><td>13</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>14</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>15</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>16</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>17</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>18</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 5</td></tr>
+<tr><td>19</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 5</td></tr>
+<tr><td>20</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>21</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 6</td></tr>
+<tr><td>22</td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td><b><font color="#bbaa66">частично</font></b></td>
+	<td>issue 6, issue 7</td></tr>
+<tr><td>23</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>24</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>25</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>26</td>
+	<td><b><font color="#ee3322">провален</font></b></td>
+	<td><b><font color="#ee3322">провален</font></b></td>
+	<td><b><font color="#ee3322">провален</font></b></td>
+	<td>issue 8</td></tr>
+<tr><td>27</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>28</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>29</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>30</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>31</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>32</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+<tr><td>33</td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td><b><font color="#66aa66">пройден</font></b></td>
+	<td></td></tr>
+</table>
